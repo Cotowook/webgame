@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+    .body_wrap {
+        width: 600px;
+        height: 600px;
+        display: flex;
+        flex-direction: column;
+        border-radius: 10%;
+        align-items: center;
+
+        background-image: url('img/canvas.jpg');
+        background-repeat: repeat;
+    }
+    #titleScreen { margin-top: 100px; }
+    #titleScreen h1 {
+        font-size: 50px;
+        font-weight: 900;
+        color:white;
+        margin-bottom: 30px;
+    }
+    #startButton {
+            background-color: rgb(104, 64, 4);
+            color: white;
+            border-radius: 9999px;
+            padding: 20px 40px;
+            font-weight: 700;
+            font-size: 50px;
+            border: none;
+            outline: none;
+            margin-left: 60px;
+    }
+    .board {
+            width: 450px;
+            height: 100px;
+            margin: 5px;
+            justify-items: center;
+            background-color: white;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 183, 3, 0.3);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+    .board h2 {
+            font-size: 23px;
+            font-weight: 800;
+            color: rgb(91, 72, 2);
+            margin-bottom: 5px;
+            margin-top: 5px;
+    }
+    #score {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-left: 0;
+            margin-top: 0;
+        }
+    .seed {
+            display: flex;
+            width: 20%;
+            height: 100%;
+            margin-top: 0;
+            justify-content: center;
+            align-items: center;
+    }
+
+    #seed_img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        position: relative;
+        gap: 10px
+    }
+    #canvas {
+        border: 3px solid rgb(237, 203, 139);
+        width: 500px;
+        height: 500px;
+        position: relative;
+        border-radius: 10%;
+        background-color: white;
+        display: none;
+    }
+    #circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        position: absolute;
+        background-color: white;
+        border: 0;
+        z-index: 2;
+    }
+    img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        position: absolute;
+        z-index: 1;
+    }
+
+    #result {
+        display: flex;
+        flex-direction: column;
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        align-items: center;
+        z-index: 10;
+
+        width:  350px;
+        height: 350px;
+
+        margin-left: 150px;
+        margin-top: 200px;
+    }
+    #result > div {
+        border: 5px solid rgb(117, 65, 5);
+        background-color: white;
+        padding: 40px;
+        border-radius: 12px;
+        text-align: center;
+    }
+    #result > div > p {
+        font-size: 17px;
+        font-weight: 500;
+        color: black
+    }
+    #restartBtn {
+        background-color: #d9730d;
+        color: white;
+        font-weight: 700;
+        font-size: 20px;
+        border-radius: 9999px;
+        border: none;
+    }
+    </style>
+</head>
+<body>
+    <div class="body_wrap">    
+           <div id="titleScreen">
+            <h1>클릭하여 게임시작!</h1>
+            <button id="startButton">시작하기</button>
+        </div>
+
+        <div class="board">    
+            <h2>햄스터의 씨앗을 찾아주세요</h2>
+            <div id="score"></div>
+        </div>
+
+        <div id="canvas">
+            <div id="circle"><img src='img/hamster.png' alt="player"></div>
+
+            <div id='result'></div>
+        </div>
+    </div>
+
+<script>
+    const total = 5; // 도달해야할 목표 개수 
+    const STEP = 10; // 공이 움직일 이동거리 
+    const canvasWidth = 500;
+    const canvasHeight = 500;
+    const currentLeft = 150; // 초기 원의 위치  
+    const currentTop = 150;  
+    let score = 0;    
+
+    function startGame() {
+        score = 0;
+        document.getElementById('titleScreen').style.display = 'none';
+        document.querySelector('.board').style.display = 'flex';
+        document.getElementById('canvas').style.display = 'block';
+
+        goal = new Goal();
+        player = new Circle(currentLeft, currentTop, goal);    
+        player.move();
+    }
+
+    function board(){    
+    const divScore = document.getElementById('score')
+      divScore.innerHTML = '';
+            for (let i = 1; i <= total; i++) {
+                let imageUrl = '';
+                if (i <= score) { imageUrl = 'img/seed.png'; } 
+                else { imageUrl = 'img/seed2.png'; }
+
+                divScore.innerHTML += `<div class=seed style="display: flex; align-items: center
+                border-radius: 9999px; justify-content: center;"><img id="seed_img" src='${imageUrl}'"></div>`;
+            }
+    }            
+
+    function endGame(score){
+        const divResult = document.getElementById('result')   
+        if(score==total){
+            divResult.style.display = 'flex';
+            divResult.innerHTML = `<div><p>게임을 클리어 하셨습니다!<br><br>
+            <input type='button' id='restartBtn' value='다시하기' onclick='location.reload();'></p></div>`
+        }  
+    }
+         
+    function Circle(currentLeft, currentTop, targetGoal){ // 초기 위치 
+        this.element = document.querySelector("#circle")
+    
+        this.x = currentLeft;
+        this.y = currentTop;
+        this.goal = targetGoal;
+        // 원을 지정한 위치에 이동시킴
+        this.element.style.left = `${this.x}px`;
+        this.element.style.top = `${this.y}px`;
+        
+        this.move = ()=>{
+            addEventListener('keydown', (event)=>{
+            event.preventDefault();  // 화면스크롤 방지
+            let key = event.key;  
+                
+            switch (key) {
+                case 'ArrowLeft': this.x -= STEP; break;
+                case 'ArrowRight': this.x += STEP; break;
+                case 'ArrowUp': this.y -= STEP; break;
+                case 'ArrowDown': this.y += STEP; break;
+                default: return; }
+
+            if(this.x < 0){ this.x = 0; }  // 최대 범위 밖으로 넘어가면 멈추게함 
+            else if(this.x > canvasWidth - 50){ this.x = canvasWidth - 50; } 
+            if(this.y < 0){ this.y = 0; } 
+            else if(this.y > canvasHeight - 50){ this.y = canvasHeight - 50; }    
+       
+            this.element.style.left = `${this.x}px`; // 키를 누른만큼 원의 위치를 갱신
+            this.element.style.top = `${this.y}px`;  
+
+            // 서클의 왼쪽: this.x  목표의 오른쪽: ths=is.goal.x + 20 
+            // 서클의 오른쪽: this.x + 25 목표의 왼쪽: this.goal.x
+            if ( this.x < this.goal.x + 20 && this.x + 25 > this.goal.x &&      
+                this.y < this.goal.y + 0 && this.y + 25 > this.goal.y ){ 
+                score++; 
+                this.goal.reset()
+                board()
+                endGame(score)
+            }
+            });
+        }
+    }
+  
+    function position(limit){ return Math.floor(Math.random() * limit)}
+    function Goal(){ 
+        const canvasArea = document.querySelector("#canvas") 
+    
+        this.element = document.createElement("img");
+        this.element.setAttribute('src', 'img/seed.png')  // 목표로 삼을 이미지 생성
+        canvasArea.appendChild(this.element) // canvas에 img 태그를 집어넣음
+
+        this.reset = function(){
+            this.x = position(canvasWidth-50);  
+            this.y = position(canvasHeight-50);
+            this.element.style.left = this.x  + 'px'
+            this.element.style.top = this.y + 'px'
+        }
+        this.reset();
+    }  
+
+    window.onload = function(){
+    board()
+    const startButton = document.getElementById('startButton');
+    if (startButton) { startButton.addEventListener('click', startGame); }    
+    }  
+
+</script>
+</body>
+</html>
